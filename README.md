@@ -9,14 +9,16 @@ It is intentionally just a TOML file. No Python package, no runner, no vendored 
 The subagent tells Codex how to use Cursor CLI in headless mode:
 
 ```bash
-agent --model auto --print "<TASK_PROMPT>"
+agent --model auto --print --trust "<TASK_PROMPT>"
 ```
 
 For risky, dirty, or parallel work, it can use Cursor CLI's built-in worktree mode:
 
 ```bash
-agent --model auto --print --worktree "<TASK_PROMPT>"
+agent --model auto --print --trust --worktree "<TASK_PROMPT>"
 ```
+
+`--trust` is part of the default command shape because headless runs cannot answer a workspace trust prompt interactively.
 
 After Cursor finishes, the subagent is responsible for inspecting the diff, running reasonable checks, and reporting back clearly.
 
@@ -64,6 +66,31 @@ agent logout
 agent login
 ```
 
+## Trust and Force
+
+`bigfaster-worker` assumes `--trust` by default:
+
+```bash
+agent --model auto --print --trust "<TASK_PROMPT>"
+```
+
+This is a practical headless-mode default. Without it, Cursor CLI may stop at a workspace trust prompt that the subagent cannot answer interactively.
+
+`--force` is different. It can bypass command approval prompts, so the subagent should not use it by default. It may use `--force` only when:
+
+- the user explicitly authorized the implementation,
+- the expected commands are part of the task or reasonable verification,
+- command approval would otherwise block a headless run,
+- the subagent reports that it used `--force` and why.
+
+Example:
+
+```bash
+agent --model auto --print --trust --force "<TASK_PROMPT>"
+```
+
+This is useful when Cursor says it cannot run tests or checks because approval is blocking headless execution.
+
 ## How It Chooses Worktree vs Current Tree
 
 The subagent starts by checking:
@@ -107,10 +134,10 @@ This repo follows the official Cursor CLI command shape:
 - `agent`: Cursor CLI command
 - `--print` / `-p`: headless, non-interactive mode
 - `--model auto`: Cursor Auto model selection
+- `--trust`: default for this subagent, because headless runs cannot answer trust prompts
 - `--worktree`: Cursor CLI built-in isolated worktree execution
 - `--workspace <REPO_PATH>`: target a specific repository
-- `--trust`: avoid workspace trust prompts in headless mode
-- `--force`: only when explicitly approved and needed
+- `--force`: only when explicitly approved and needed to avoid blocked command approvals
 - `--output-format json` / `stream-json`: optional structured output
 
 References:
