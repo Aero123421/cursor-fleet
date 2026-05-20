@@ -1,0 +1,30 @@
+{
+  "mode": "review",
+  "task": "Review this branch against main for correctness, security, tests, performance, and maintainability.",
+  "summary": "Read-only review split by risk area.",
+  "workers": [
+    {
+      "id": "correctness",
+      "title": "Review: correctness",
+      "prompt": "Look for correctness bugs, behavior regressions, edge cases, and broken invariants. Do not edit files.",
+      "paths": ["."],
+      "cursor_mode": "ask",
+      "write": false,
+      "required": true
+    },
+    {
+      "id": "security",
+      "title": "Review: security",
+      "prompt": "Look for security, privacy, injection, authz/authn, secret-handling, and unsafe command risks. Do not edit files.",
+      "paths": ["."],
+      "cursor_mode": "ask",
+      "write": false,
+      "required": true
+    }
+  ],
+  "verify_commands": [],
+  "write": false,
+  "apply_final_patch": false,
+  "warnings": [],
+  "metadata": {}
+}
