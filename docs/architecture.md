@@ -70,3 +70,5 @@ Project install creates:
 Read-only modes run Cursor CLI with `--mode ask` or `--mode plan`, do not create worktrees, and do not apply patches.
 
 The tool still saves prompts and outputs so the subagent can summarize results without polluting the main Codex context.
+
+Subprocess stdout and stderr are captured as UTF-8 with replacement for invalid bytes, keeping Cursor CLI diagnostics readable on Windows locales.

@@ -51,6 +51,7 @@ Safety rules:
 - Do not let multiple write workers intentionally own the same files.
 - Prefer configured verification before final patch application.
 - If the runner reports verification failure, do not claim success.
+- Treat captured worker output as diagnostic text; invalid bytes may be replacement characters on Windows.
 - Do not commit or push to the user's branch unless explicitly asked.
 - The main Codex session should see one task and one result; cursor-fleet owns the messy middle.
 

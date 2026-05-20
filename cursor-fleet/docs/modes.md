@@ -67,6 +67,8 @@ Uses worktrees.
 
 Runs configured verification commands only. Does not launch Cursor workers.
 
+Verification command output is captured as UTF-8 with invalid bytes replaced, matching Cursor worker output handling.
+
 ## `fix-ci`
 
 Reads a CI log, redacts obvious token labels, asks a focused Cursor worker to patch the failure, then runs configured verification.
