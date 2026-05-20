@@ -1,10 +1,8 @@
-# Agent instructions for cursor-fleet
+# Agent instructions for bigfaster-worker
 
-This repository is a developer tool. Keep changes boring, deterministic, and easy to audit.
+This repository only maintains the `bigfaster-worker.toml` Codex subagent definition.
 
-- Prefer Python standard library over new dependencies.
-- Keep project installation self-contained: `scripts/install_project.py` should be able to copy the runner into another repo without requiring a global package install.
-- Do not vendor Cursor CLI, Codex, model weights, credentials, or token material.
-- Treat `.env`, private keys, tokens, CI secrets, and credentials as forbidden input.
-- When changing runner behavior, update `docs/architecture.md`, `docs/modes.md`, and the Codex agent template.
-- Do not remove safety gates to make demos easier.
+- Keep the repository minimal.
+- Prefer official Cursor CLI command names and flags.
+- Do not add orchestration code, vendored dependencies, credentials, tokens, or model artifacts.
+- If Cursor CLI behavior changes, update `bigfaster-worker.toml` and `README.md` together.
