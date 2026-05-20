@@ -1,5 +1,23 @@
 # Modes
 
+## `delegate`
+
+Runs one direct in-place implementation by default:
+
+```bash
+cursor-fleet delegate --task-file .cursor-fleet/tasks/task.md
+```
+
+This is the default path for the Codex subagent. It does not create branches, worktrees, commits, or final patches. Direct write mode refuses a dirty workspace by default when user-change protection is enabled.
+
+Use read-only delegation for investigation or review:
+
+```bash
+cursor-fleet delegate --read-only --task "Explain this subsystem."
+```
+
+The modes below belong to `cursor-fleet run` and are intended for explicit fleet/worktree orchestration.
+
 ## `auto`
 
 Routes to a more specific mode using task text. The router is intentionally simple and deterministic. Codex can also pass an explicit mode when it already knows the task class.
@@ -65,13 +83,13 @@ Uses worktrees.
 
 ## `verify`
 
-Runs configured verification commands only. Does not launch Cursor workers.
+Runs configured verification commands only. Does not launch backend workers.
 
-Verification command output is captured as UTF-8 with invalid bytes replaced, matching Cursor worker output handling.
+Verification command output is captured as UTF-8 with invalid bytes replaced, matching backend worker output handling.
 
 ## `fix-ci`
 
-Reads a CI log, redacts obvious token labels, asks a focused Cursor worker to patch the failure, then runs configured verification.
+Reads a CI log, redacts obvious token labels, asks a focused backend worker to patch the failure, then runs configured verification.
 
 Cursor mode: default agent mode.
 

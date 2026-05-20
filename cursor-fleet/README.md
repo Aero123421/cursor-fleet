@@ -1,15 +1,18 @@
 # cursor-fleet
 
-**Use Codex as the brain, Cursor CLI as the fleet.**
+**Use Codex as the brain, with a fast implementation subagent behind it.**
 
-`cursor-fleet` is a project-scoped Codex subagent plus a small Python CLI that decomposes large coding tasks, runs Cursor CLI workers with `agent -p`, isolates write-heavy workers in Git worktrees, integrates their changes, verifies the result, and applies one final patch back to the original workspace.
+`cursor-fleet` is a project-scoped Codex subagent plus a small Python CLI. Its default path is intentionally simple: a Codex subagent delegates one implementation task to a local backend with `agent -p --model auto`, then reports changed files, verification, and risks. The backend is treated as an implementation detail so the main Codex session can think in terms of "fast, reliable implementation" rather than a specific tool.
+
+The older fleet/worktree orchestration still exists for tasks that explicitly need parallel variants, isolated branches, comparison runs, or CI repair orchestration.
 
 It is intentionally narrow:
 
 - Codex handles orchestration and final judgment.
-- Cursor CLI handles worker execution.
-- Git worktrees isolate risky edits.
-- `cursor-fleet` owns the messy middle: planning, worker prompts, merge, verification, reporting, cleanup.
+- The project subagent handles task handoff and final reporting.
+- The local backend handles implementation.
+- Direct delegation is the default.
+- Git worktrees are optional, not the normal path.
 
 > This project is not affiliated with Cursor, Anysphere, OpenAI, or Codex. Users must install and authenticate Cursor CLI separately.
 
@@ -20,14 +23,30 @@ Codex subagents are great for delegation, but large write-heavy tasks can become
 `cursor-fleet` lets the main Codex session say:
 
 ```text
-Use cursor-fleet to implement this. Return the final result, changed files, tests run, and remaining risks.
+Use task-worker to handle this. Return the final result, changed files, tests run, and remaining risks.
 ```
 
-The main session does **not** need to know about individual Cursor worker worktrees.
+The main session does **not** need to know about the backend, worker logs, or optional worktree mechanics.
+
+## Default direct delegation
+
+For normal work, use one in-place delegation:
+
+```bash
+cursor-fleet delegate --task "Implement the requested change."
+```
+
+For read-only investigation or review:
+
+```bash
+cursor-fleet delegate --read-only --task "Explain how billing export works."
+```
+
+Direct write mode refuses to run on a dirty workspace by default when `safety.protect_user_changes = true`. Pass `--allow-dirty` only when you intentionally want the backend to work on top of existing local changes.
 
 ## Modes
 
-`cursor-fleet` ships with all core modes enabled from day one:
+`cursor-fleet run` keeps the optional fleet/worktree modes:
 
 | Mode | Purpose | Default Cursor mode | Worktrees |
 | --- | --- | --- | --- |
@@ -73,10 +92,10 @@ The installer copies a self-contained vendor copy into your project:
 .cursor-fleet/vendor/cursor-fleet/
 ```
 
-That means the Codex subagent can run with:
+That means the Codex subagent can run normal direct work with:
 
 ```bash
-python3 .codex/tools/cursor_fleet.py run --mode auto --task-file .cursor-fleet/tasks/task.md
+python3 .codex/tools/cursor_fleet.py delegate --task-file .cursor-fleet/tasks/task.md
 ```
 
 No global Python package installation is required after project install.
@@ -94,7 +113,7 @@ Do not start a fleet run yet.
 Then, for a large task:
 
 ```text
-Use the cursor-fleet subagent to handle this task end-to-end. Hide worker worktree details unless something fails. Return only the final summary, changed files, verification results, and unresolved risks.
+Use the task-worker subagent to handle this task end-to-end. Hide backend details unless something fails. Return only the final summary, changed files, verification results, and unresolved risks.
 ```
 
 ## Cursor CLI requirements
@@ -165,8 +184,8 @@ python3 .codex/tools/cursor_fleet.py run \
 ### Investigation
 
 ```bash
-python3 .codex/tools/cursor_fleet.py run \
-  --mode investigate \
+python3 .codex/tools/cursor_fleet.py delegate \
+  --read-only \
   --task "Find why checkout totals sometimes differ between the API and UI."
 ```
 

@@ -26,7 +26,7 @@ def report_markdown(report: FleetReport) -> str:
         lines.append("")
     lines.append("## Workers")
     if not report.workers:
-        lines.append("No Cursor workers launched.")
+        lines.append("No backend workers launched.")
     for worker in report.workers:
         lines.append(f"### {worker.id}: {worker.title}")
         lines.append(f"- Status: `{worker.status}`")
@@ -34,6 +34,12 @@ def report_markdown(report: FleetReport) -> str:
             lines.append(f"- Branch: `{worker.branch}`")
         if worker.commit:
             lines.append(f"- Commit: `{worker.commit}`")
+        if worker.stdout_path:
+            lines.append(f"- Stdout: `{worker.stdout_path}`")
+        if worker.stderr_path:
+            lines.append(f"- Stderr: `{worker.stderr_path}`")
+        if worker.prompt_path:
+            lines.append(f"- Prompt: `{worker.prompt_path}`")
         if worker.changed_files:
             lines.append("- Changed files:")
             for path in worker.changed_files:

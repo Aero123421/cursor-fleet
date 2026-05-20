@@ -23,6 +23,8 @@ extra_args = []
 - `sandbox`: optional Cursor sandbox flag.
 - `extra_args`: additional Cursor CLI flags.
 
+`cursor-fleet delegate` uses this backend config directly. `cursor-fleet run` uses the same config for every fleet worker.
+
 ## Fleet
 
 ```toml
@@ -55,6 +57,8 @@ deny_paths = [
 ```
 
 The deny list is checked after each worker run. If a worker changes a denied path, its changes are not committed for integration.
+
+In direct delegation, denied-path changes fail the run report. Because direct mode edits the original workspace, review and revert those files manually if a backend violates this safety gate.
 
 ## Verification
 

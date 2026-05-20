@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "cursor-fleet"
 version = "0.1.0"
-description = "A Codex subagent and CLI wrapper for orchestrating Cursor CLI workers in isolated git worktrees."
+description = "A Codex task-worker bridge for direct delegation and optional isolated fleet runs."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "Apache-2.0" }

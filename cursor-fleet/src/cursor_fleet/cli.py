@@ -7,8 +7,9 @@ from pathlib import Path
 
 from . import __version__
 from .config import apply_env_overrides, load_config, write_default_config
+from .direct import run_direct
 from .git import GitError, repo_root, status_porcelain
-from .orchestrator import run_plan
+from .orchestrator import new_run_id, run_plan
 from .planner import ALL_MODES, build_plan, load_plan, save_plan
 from .report import print_report
 from .runner import CursorRunner
@@ -16,7 +17,69 @@ from .util import write_text
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[2]
 
-DEFAULT_CODEX_AGENT_TOML = 'name = "cursor-fleet"\ndescription = "Delegates large tasks to Cursor CLI workers, manages worktrees, integrates changes, verifies results, and returns one final report."\nsandbox_mode = "workspace-write"\nmodel_reasoning_effort = "medium"\nnickname_candidates = ["Fleet", "Foreman", "Harbor", "Relay", "Yard"]\n\ndeveloper_instructions = """\nYou are cursor-fleet, a Codex subagent that orchestrates Cursor CLI workers through the local cursor-fleet runner.\n\nWrite the task to .cursor-fleet/tasks/, run python3 .codex/tools/cursor_fleet.py run with the appropriate mode, and return only the final summary, changed files, verification results, final patch status, and remaining risks.\n\nAvailable modes: auto, investigate, review, implement, migrate, test, docs, verify, fix-ci.\n\nSafety rules:\n- Never pass secrets, .env contents, private keys, tokens, or credentials to Cursor.\n- Do not expose individual worker worktree paths unless debugging a failure.\n- Prefer read-only modes for investigation/review and worktrees for write-heavy tasks.\n- Do not commit or push unless explicitly asked.\n"""\n'
+DEFAULT_CODEX_AGENT_TOML = """
+name = "task-worker"
+description = "Handles concrete codebase tasks, including implementation, fixes, tests, docs, and focused read-only investigation."
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"
+nickname_candidates = ["Worker", "Runner", "Builder", "Relay", "Patch"]
+
+developer_instructions = \"\"\"
+You are task-worker, a Codex subagent for concrete codebase tasks.
+
+Your job is to take a well-scoped task, execute it, verify it when practical, and return a concise result. Treat the local execution backend as an internal detail; do not mention Cursor or backend mechanics unless debugging a backend failure.
+
+Use this subagent like Codex's default worker for execution and production work:
+- Implement a feature or bug fix.
+- Update tests or docs.
+- Make a bounded refactor.
+- Verify an existing change.
+
+Use it like Codex's default explorer only for focused read-only codebase questions:
+- Find relevant files and ownership.
+- Explain a subsystem.
+- Investigate likely causes without editing files.
+
+Operating rules:
+- Write the task to a file under .cursor-fleet/tasks/.
+- Use direct in-place delegation by default.
+- Use fleet/worktree orchestration only when isolation, variants, comparison, or parallel workers are explicitly useful.
+- Do not create branches, worktrees, commits, or pushes unless explicitly asked.
+- Do not revert user changes or unrelated edits.
+- Keep ownership clear when the task names specific files or modules.
+- Return only the useful result; keep backend details out of normal responses.
+
+The runner defaults to the backend's `auto` model. Only pass `--model` when the main Codex session explicitly asks for a specific model.
+
+Default implementation command:
+python3 .codex/tools/cursor_fleet.py delegate --task-file <task-file>
+
+Read-only command:
+python3 .codex/tools/cursor_fleet.py delegate --read-only --task-file <task-file>
+
+Use fleet/worktree orchestration only when the main Codex session asks for parallel variants, isolated branches, comparison runs, or CI repair orchestration:
+python3 .codex/tools/cursor_fleet.py run --mode auto --task-file <task-file>
+
+For CI failures with logs:
+python3 .codex/tools/cursor_fleet.py run --mode fix-ci --task-file <task-file> --ci-log <ci-log-file>
+
+For verification only:
+python3 .codex/tools/cursor_fleet.py run --mode verify --task-file <task-file>
+
+Safety rules:
+- Never pass secrets, .env contents, private keys, tokens, or credentials to the backend.
+- Prefer configured verification before final patch application.
+- If the runner reports verification failure, do not claim success.
+- Treat captured worker output as diagnostic text; invalid bytes may be replacement characters on Windows.
+- The main Codex session should see one task and one result; hide backend mechanics unless failure details matter.
+
+Final response format:
+- Summary
+- Changed files
+- Verification
+- Risks
+\"\"\"
+""".lstrip()
 
 
 def _template(path: str) -> Path:
@@ -208,6 +271,28 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 0 if report.status in {"ok", "dry-run"} else 1
 
 
+def cmd_delegate(args: argparse.Namespace) -> int:
+    project = repo_root(Path(args.project).resolve())
+    config = _load_config_with_overrides(project, args)
+    task = _read_task(args)
+    run_id = new_run_id()
+    run_root = Path(config.fleet.run_dir)
+    if not run_root.is_absolute():
+        run_root = project / run_root
+    report = run_direct(
+        project=project,
+        task=task,
+        config=config,
+        run_id=run_id,
+        run_dir=run_root / run_id,
+        read_only=args.read_only,
+        dry_run=args.dry_run,
+        allow_dirty=args.allow_dirty,
+    )
+    print_report(report, as_json=args.json)
+    return 0 if report.status in {"ok", "dry-run"} else 1
+
+
 def cmd_clean(args: argparse.Namespace) -> int:
     project = repo_root(Path(args.project).resolve())
     run_root = project / ".cursor-fleet" / "runs"
@@ -227,7 +312,7 @@ def cmd_clean(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="cursor-fleet", description="Orchestrate Cursor CLI workers from a Codex subagent.")
+    parser = argparse.ArgumentParser(prog="cursor-fleet", description="Run a Codex task-worker through a local execution backend.")
     parser.add_argument("--version", action="version", version=f"cursor-fleet {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -256,7 +341,7 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument("--max-workers", type=int)
         p.add_argument("--verify-cmd", action="append", default=[])
 
-    p = sub.add_parser("plan", help="Create a task plan without running Cursor workers")
+    p = sub.add_parser("plan", help="Create a task plan without running backend workers")
     add_common_run_args(p)
     p.add_argument("--output", "-o")
     p.set_defaults(func=cmd_plan)
@@ -270,6 +355,14 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--keep-runs", action="store_true")
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser("delegate", help="Run one direct in-place implementation or read-only delegation")
+    add_common_run_args(p)
+    p.add_argument("--read-only", action="store_true", help="Use read-only ask mode and do not edit files")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument("--allow-dirty", action="store_true", help="Allow direct write mode when the workspace already has changes")
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_delegate)
 
     p = sub.add_parser("clean", help="Remove local cursor-fleet runtime directories")
     p.add_argument("--project", default=".")

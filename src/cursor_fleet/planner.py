@@ -89,7 +89,7 @@ def build_plan(
         return TaskPlan(
             mode=mode,
             task=task or "Verify the current workspace changes.",
-            summary="Run configured verification commands without launching Cursor workers.",
+            summary="Run configured verification commands without launching backend workers.",
             workers=[],
             verify_commands=verify_commands,
             write=False,

@@ -34,7 +34,7 @@ from .verify import run_verification, verification_ok
 
 
 def new_run_id() -> str:
-    return dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
 
 
 def _resolve_run_dir(project: Path, config: AppConfig, run_id: str) -> Path:

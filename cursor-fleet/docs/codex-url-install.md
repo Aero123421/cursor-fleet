@@ -10,7 +10,7 @@ Clone it to /tmp/cursor-fleet, run:
 python3 /tmp/cursor-fleet/scripts/install_project.py --target .
 Then run:
 python3 .codex/tools/cursor_fleet.py doctor
-Do not start a fleet run yet.
+Do not start a task run yet.
 ```
 
 What this does:
@@ -25,11 +25,11 @@ What this does:
 Then use:
 
 ```text
-Use the cursor-fleet subagent to implement this large task end-to-end.
+Use the task-worker subagent to implement this large task end-to-end.
 ```
 
 Codex should invoke the subagent, and the subagent should invoke:
 
 ```bash
-python3 .codex/tools/cursor_fleet.py run --mode auto --task-file .cursor-fleet/tasks/<task>.md
+python3 .codex/tools/cursor_fleet.py delegate --task-file .cursor-fleet/tasks/<task>.md
 ```

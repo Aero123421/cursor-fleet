@@ -1,19 +1,19 @@
 # Architecture
 
-`cursor-fleet` is a thin orchestration layer, not a new model provider.
+`cursor-fleet` is a thin Codex subagent bridge, not a new model provider.
 
 ```text
 Main Codex session
   ↓ asks explicitly
-Codex custom subagent: cursor-fleet
+Codex custom subagent: task-worker
   ↓ shell command
 .codex/tools/cursor_fleet.py
   ↓ vendored Python package
 cursor_fleet CLI
   ↓ subprocess
-Cursor CLI workers via `agent -p --model auto`
+Local implementation backend via `agent -p --model auto`
   ↓
-Git worktrees, integration, verification, final patch
+Direct workspace edits by default; optional worktrees for fleet runs
 ```
 
 ## Design boundary
@@ -28,11 +28,10 @@ The main Codex session should see:
 
 It should not have to manage:
 
-- worker prompts,
-- individual worker worktrees,
-- merge order,
-- conflict resolution attempts,
-- final patch generation.
+- backend prompts,
+- tool-specific login and model details,
+- optional worker worktrees,
+- merge order or conflict resolution for fleet runs.
 
 ## Runtime directories
 
@@ -47,7 +46,25 @@ Project install creates:
 .cursor-fleet/runs/<run-id>/          # manifests, logs, patches, reports
 ```
 
-## Write-heavy flow
+## Direct Flow
+
+This is the default path used by the Codex subagent.
+
+```text
+1. Resolve git repo root and base SHA.
+2. Refuse direct write mode on a dirty workspace unless explicitly allowed.
+3. Save the task, manifest, prompt, stdout, and stderr.
+4. Run one backend command in the original workspace.
+5. Check denied paths.
+6. Run configured verification commands.
+7. Write report.json and report.md.
+```
+
+Direct flow does not create branches, worktrees, commits, or final patches. It is the right default for one coherent implementation task.
+
+## Fleet/Worktree Flow
+
+This is an optional path for parallel variants, isolated branches, comparison runs, or CI repair orchestration.
 
 ```text
 1. Resolve git repo root and base SHA.
@@ -58,16 +75,16 @@ Project install creates:
 6. Commit each successful worker branch.
 7. Create an integration worktree.
 8. Merge worker branches into integration.
-9. If conflicts appear, run a bounded conflict-resolver Cursor worker.
+9. If conflicts appear, run a bounded conflict-resolver backend worker.
 10. Run verification commands.
 11. Generate final.patch from base SHA to integration HEAD.
 12. Apply final.patch to the original workspace if safe.
 13. Write report.json and report.md.
 ```
 
-## Read-only flow
+## Read-Only Flow
 
-Read-only modes run Cursor CLI with `--mode ask` or `--mode plan`, do not create worktrees, and do not apply patches.
+Read-only delegation runs the backend with `--mode ask`, does not create worktrees, and does not apply patches.
 
 The tool still saves prompts and outputs so the subagent can summarize results without polluting the main Codex context.
 

@@ -27,6 +27,17 @@ class ConfigTests(unittest.TestCase):
         model_index = cmd.index("--model")
         self.assertEqual(cmd[model_index + 1], "auto")
 
+    def test_read_only_command_uses_ask_mode(self) -> None:
+        runner = CursorRunner(AppConfig())
+        runner.resolve_binary = lambda: "agent"  # type: ignore[method-assign]
+        cmd = runner.build_command(
+            Path("."),
+            WorkerSpec(id="w", title="Worker", prompt="Do it", cursor_mode="ask", write=False),
+            "prompt",
+        )
+        self.assertIn("--mode", cmd)
+        self.assertEqual(cmd[cmd.index("--mode") + 1], "ask")
+
 
 if __name__ == "__main__":
     unittest.main()
