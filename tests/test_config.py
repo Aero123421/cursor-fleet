@@ -4,7 +4,9 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from cursor_fleet.config import load_config, write_default_config
+from cursor_fleet.config import AppConfig, load_config, write_default_config
+from cursor_fleet.models import WorkerSpec
+from cursor_fleet.runner import CursorRunner
 
 
 class ConfigTests(unittest.TestCase):
@@ -15,8 +17,15 @@ class ConfigTests(unittest.TestCase):
             self.assertTrue(write_default_config(path))
             cfg = load_config(root)
             self.assertEqual(cfg.cursor.bin, "agent")
-            self.assertEqual(cfg.cursor.model, "composer-2.5")
+            self.assertEqual(cfg.cursor.model, "auto")
             self.assertGreaterEqual(cfg.fleet.max_workers, 1)
+
+    def test_default_command_uses_auto_model(self) -> None:
+        runner = CursorRunner(AppConfig())
+        runner.resolve_binary = lambda: "agent"  # type: ignore[method-assign]
+        cmd = runner.build_command(Path("."), WorkerSpec(id="w", title="Worker", prompt="Do it"), "prompt")
+        model_index = cmd.index("--model")
+        self.assertEqual(cmd[model_index + 1], "auto")
 
 
 if __name__ == "__main__":

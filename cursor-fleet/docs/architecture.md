@@ -11,7 +11,7 @@ Codex custom subagent: cursor-fleet
   ↓ vendored Python package
 cursor_fleet CLI
   ↓ subprocess
-Cursor CLI workers via `agent -p`
+Cursor CLI workers via `agent -p --model auto`
   ↓
 Git worktrees, integration, verification, final patch
 ```

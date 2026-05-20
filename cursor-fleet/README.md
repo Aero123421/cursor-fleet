@@ -111,7 +111,7 @@ Override the binary or model in `.cursor-fleet/config.toml`:
 ```toml
 [cursor]
 bin = "agent"
-model = "composer-2.5"
+model = "auto"
 output_format = "json"
 trust = true
 force = false

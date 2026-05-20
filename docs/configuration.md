@@ -7,7 +7,7 @@
 ```toml
 [cursor]
 bin = "agent"
-model = "composer-2.5"
+model = "auto"
 output_format = "json"
 trust = true
 force = false
@@ -16,7 +16,7 @@ extra_args = []
 ```
 
 - `bin`: Cursor CLI binary. Defaults to `agent`.
-- `model`: Cursor model. Defaults to `composer-2.5`.
+- `model`: Cursor model. Defaults to `auto`, which lets Cursor choose the model.
 - `output_format`: `text`, `json`, or `stream-json`.
 - `trust`: passes `--trust`, useful in headless mode.
 - `force`: passes `--force` only if `safety.allow_force = true`.

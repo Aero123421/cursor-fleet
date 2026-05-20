@@ -4,6 +4,8 @@
 
 Routes to a more specific mode using task text. The router is intentionally simple and deterministic. Codex can also pass an explicit mode when it already knows the task class.
 
+This mode is separate from Cursor's model setting. By default, cursor-fleet invokes Cursor with `--model auto`.
+
 ## `investigate`
 
 Read-only code exploration. Useful for root-cause analysis, architecture mapping, and “why does this happen?” questions.

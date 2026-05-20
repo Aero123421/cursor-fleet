@@ -9,7 +9,7 @@ from typing import Any
 DEFAULT_CONFIG_TOML = """
 [cursor]
 bin = "agent"
-model = "composer-2.5"
+model = "auto"
 output_format = "json"
 trust = true
 force = false
@@ -53,7 +53,7 @@ commands = []
 @dataclass(slots=True)
 class CursorConfig:
     bin: str = "agent"
-    model: str = "composer-2.5"
+    model: str = "auto"
     output_format: str = "json"
     trust: bool = True
     force: bool = False

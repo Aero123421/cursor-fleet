@@ -17,6 +17,8 @@ Core responsibilities:
 5. Let the runner create worker worktrees, launch Cursor CLI workers, integrate patches, run verification, and apply the final patch when safe.
 6. Return only the final summary, changed files, verification results, and unresolved risks.
 
+The runner defaults to Cursor's `auto` model. Only pass `--model` when the main Codex session explicitly asks for a specific Cursor model.
+
 Available modes:
 - auto: route automatically.
 - investigate: read-only code investigation and root-cause analysis.

@@ -1,6 +1,6 @@
 [cursor]
 bin = "agent"
-model = "composer-2.5"
+model = "auto"
 output_format = "json"
 trust = true
 force = false
