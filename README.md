@@ -56,10 +56,12 @@ Recommended snippet:
 ```md
 ## bigfaster-worker
 
-Use `bigfaster-worker` for large or fast-moving implementation tasks where a Cursor CLI implementation attempt would help.
+Use `bigfaster-worker` for one coherent implementation task where a Cursor CLI implementation attempt would help.
 
+- `bigfaster-worker` is not the default fan-out worker.
 - Prefer one `bigfaster-worker` invocation for one coherent repository task.
 - Do not call multiple `bigfaster-worker` agents unless the user explicitly asks for parallel implementations, comparison variants, or clearly disjoint ownership slices.
+- For broad read-only exploration, use normal exploration workers first; call `bigfaster-worker` once after the implementation scope is clear.
 - If multiple related fixes touch the same package or feature area, combine them into one prompt with clear ownership boundaries.
 - Give the worker explicit allowed files/directories, files/directories to avoid, and known test commands.
 - The worker should use `--worktree` when the tree is dirty, the task is risky, or parallel work is likely.
