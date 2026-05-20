@@ -47,6 +47,27 @@ Then ask Codex:
 Use bigfaster-worker to implement this task.
 ```
 
+## Recommended AGENTS.md Usage
+
+For best results, tell your main Codex agent how to use this subagent from the target repository's `AGENTS.md`.
+
+Recommended snippet:
+
+```md
+## bigfaster-worker
+
+Use `bigfaster-worker` for large or fast-moving implementation tasks where a Cursor CLI implementation attempt would help.
+
+- Prefer one `bigfaster-worker` invocation for one coherent repository task.
+- Do not call multiple `bigfaster-worker` agents unless the user explicitly asks for parallel implementations, comparison variants, or clearly disjoint ownership slices.
+- If multiple related fixes touch the same package or feature area, combine them into one prompt with clear ownership boundaries.
+- Give the worker explicit allowed files/directories, files/directories to avoid, and known test commands.
+- The worker should use `--worktree` when the tree is dirty, the task is risky, or parallel work is likely.
+- The worker must inspect `git diff` after Cursor finishes and report tests/checks run.
+```
+
+This matters because Codex may otherwise split a broad request into several subagent calls. That can be useful for truly independent work, but for related fixes in one repository it is usually better to make one `bigfaster-worker` call with a complete prompt.
+
 ## Requirements
 
 - Codex with project-scoped subagent support.
