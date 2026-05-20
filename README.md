@@ -9,16 +9,17 @@ It is intentionally just a TOML file. No Python package, no runner, no vendored 
 The subagent tells Codex how to use Cursor CLI in headless mode:
 
 ```bash
-agent --model auto --print --trust "<TASK_PROMPT>"
+agent --model auto --print --trust -- "<TASK_PROMPT>"
 ```
 
 For risky, dirty, or parallel work, it can use Cursor CLI's built-in worktree mode:
 
 ```bash
-agent --model auto --print --trust --worktree "<TASK_PROMPT>"
+agent --model auto --print --trust --worktree <WORKTREE_NAME> -- "<TASK_PROMPT>"
 ```
 
 `--trust` is part of the default command shape because headless runs cannot answer a workspace trust prompt interactively.
+The `--` before the prompt keeps the prompt from being parsed as a flag value, especially when `--worktree` is present.
 
 After Cursor finishes, the subagent is responsible for inspecting the diff, running reasonable checks, and reporting back clearly.
 
@@ -71,7 +72,7 @@ agent login
 `bigfaster-worker` assumes `--trust` by default:
 
 ```bash
-agent --model auto --print --trust "<TASK_PROMPT>"
+agent --model auto --print --trust -- "<TASK_PROMPT>"
 ```
 
 This is a practical headless-mode default. Without it, Cursor CLI may stop at a workspace trust prompt that the subagent cannot answer interactively.
@@ -86,7 +87,7 @@ This is a practical headless-mode default. Without it, Cursor CLI may stop at a 
 Example:
 
 ```bash
-agent --model auto --print --trust --force "<TASK_PROMPT>"
+agent --model auto --print --trust --force -- "<TASK_PROMPT>"
 ```
 
 This is useful when Cursor says it cannot run tests or checks because approval is blocking headless execution.
@@ -106,6 +107,12 @@ It should prefer `--worktree` when:
 - the task is risky,
 - parallel work is likely,
 - you want an isolated implementation attempt.
+
+Use a short descriptive worktree name:
+
+```bash
+agent --model auto --print --trust --worktree pptx-semantic-style -- "<TASK_PROMPT>"
+```
 
 It may run directly in the current tree when:
 
@@ -127,6 +134,16 @@ git diff
 
 If unrelated files changed, it should either revert those specific changes or report them clearly.
 
+When Cursor runs in `--worktree`, the subagent should not blindly merge that worktree. The safer workflow is:
+
+1. Inspect the Cursor worktree diff.
+2. Confirm the changed files match the requested ownership boundary.
+3. Apply or copy only the intended files back to the original repository.
+4. Run tests/checks in the original repository if the worktree is missing dependencies.
+5. Leave unrelated user or agent changes untouched.
+
+This matters because Cursor's isolated worktree may not have `node_modules`, virtualenvs, generated assets, or other local dependencies available.
+
 ## Official Cursor CLI Basis
 
 This repo follows the official Cursor CLI command shape:
@@ -135,7 +152,8 @@ This repo follows the official Cursor CLI command shape:
 - `--print` / `-p`: headless, non-interactive mode
 - `--model auto`: Cursor Auto model selection
 - `--trust`: default for this subagent, because headless runs cannot answer trust prompts
-- `--worktree`: Cursor CLI built-in isolated worktree execution
+- `--worktree <NAME>`: Cursor CLI built-in isolated worktree execution
+- `--`: separates Cursor flags from the task prompt
 - `--workspace <REPO_PATH>`: target a specific repository
 - `--force`: only when explicitly approved and needed to avoid blocked command approvals
 - `--output-format json` / `stream-json`: optional structured output
